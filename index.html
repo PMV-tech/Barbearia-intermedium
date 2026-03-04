@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Barbearia Estilo</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -13,34 +13,35 @@
 
     <div id="authScreen" class="hero" style="background: #000; z-index: 5000;">
         <div class="modal-content">
-            <h2 id="authTitle" style="color:var(--gold); text-align:center">ENTRAR</h2>
+            <h2 id="authTitle" style="color:var(--gold); text-align:center; margin-bottom:20px;">ENTRAR</h2>
             <div id="loginBox">
-                <input type="email" id="l-email" placeholder="E-mail">
+                <input type="email" id="l-email" placeholder="Seu e-mail">
                 <div class="input-container">
-                    <input type="password" id="l-pass" placeholder="Senha">
+                    <input type="password" id="l-pass" placeholder="Sua senha">
                     <i class="fas fa-eye eye-icon" onclick="toggleView('l-pass', this)"></i>
                 </div>
                 
                 <div class="login-footer">
                     <label><input type="checkbox" id="l-remember"> Lembrar-me</label>
-                    <a href="#" onclick="alert('Funcionalidade em desenvolvimento: Entre em contato com o suporte.')">Esqueceu a senha?</a>
+                    <a href="#" onclick="alert('Contate o suporte para recuperar sua senha.')">Esqueceu?</a>
                 </div>
 
-                <button class="btn-primary" onclick="login()">ENTRAR</button>
-                <p onclick="toggleAuth(true)" style="cursor:pointer; font-size:0.8rem; text-align:center; margin-top:15px">Criar conta</p>
+                <button class="btn-primary" onclick="login()">ACESSAR CONTA</button>
+                <p onclick="toggleAuth(true)" style="cursor:pointer; font-size:0.9rem; text-align:center; margin-top:20px; color:var(--gold)">Não tem conta? Cadastre-se</p>
             </div>
             <div id="regBox" style="display:none">
-                <input type="text" id="r-nome" placeholder="Nome">
-                <input type="email" id="r-email" placeholder="E-mail">
-                <input type="password" id="r-pass" placeholder="Senha">
+                <input type="text" id="r-nome" placeholder="Seu nome">
+                <input type="email" id="r-email" placeholder="Seu e-mail">
+                <input type="password" id="r-pass" placeholder="Crie uma senha">
                 <select id="r-cabelo">
+                    <option value="" disabled selected>Tipo de Cabelo</option>
                     <option value="Liso">Liso</option>
                     <option value="Ondulado">Ondulado</option>
                     <option value="Cacheado">Cacheado</option>
                     <option value="Crespo">Crespo</option>
                 </select>
-                <button class="btn-primary" onclick="cadastrar()">CADASTRAR</button>
-                <p onclick="toggleAuth(false)" style="cursor:pointer; font-size:0.8rem; text-align:center; margin-top:15px">Voltar</p>
+                <button class="btn-primary" onclick="cadastrar()">FINALIZAR CADASTRO</button>
+                <p onclick="toggleAuth(false)" style="cursor:pointer; font-size:0.9rem; text-align:center; margin-top:20px">Já tenho conta. Voltar</p>
             </div>
         </div>
     </div>
@@ -48,34 +49,36 @@
     <div id="mainContent" style="display:none">
         <div class="top-bar">
             <button class="menu-hamburguer" onclick="toggleMenu()">☰</button>
+            <span style="color:var(--gold); font-weight:bold; font-size:0.9rem">BARBEARIA ESTILO</span>
             <button onclick="logout()" style="background:none; border:none; color:var(--danger); font-weight:bold; cursor:pointer;">SAIR</button>
         </div>
 
         <nav class="side-menu" id="sideMenu">
-            <h3 id="menuNome" style="color:var(--gold)">Olá!</h3>
-            <button class="menu-item" onclick="openModal('modalNotificacoes')">🔔 Notificações <span id="notifBadge" style="background:red; border-radius:50%; padding:2px 6px; font-size:0.7rem; display:none">0</span></button>
+            <h3 id="menuNome" style="color:var(--gold); margin-bottom:30px">Olá!</h3>
+            <button class="menu-item" onclick="openModal('modalNotificacoes')">🔔 Notificações <span id="notifBadge" style="background:red; border-radius:10px; padding:2px 8px; font-size:0.7rem; display:none">0</span></button>
             <button class="menu-item" onclick="openModal('modalMeusCortes')">📅 Meus Cortes</button>
-            <button class="menu-item" onclick="openModal('modalPerfil')">👤 Perfil</button>
+            <button class="menu-item" onclick="openModal('modalPerfil')">👤 Meu Perfil</button>
         </nav>
 
-        <section class="hero" style="background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=800');">
+        <section class="hero" style="background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=800');">
             <img src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=300" class="perfil-barbeiro">
-            <h1 id="heroNome">BARBEARIA ESTILO</h1>
-            <div class="actions" style="width:300px">
-                <button class="btn-primary" onclick="openNewModal()">AGENDAR HORÁRIO</button>
+            <h1 id="heroNome" style="font-size:2rem; margin:10px 0">BARBEARIA ESTILO</h1>
+            <p style="color:#bbb; margin-bottom:30px">Seu estilo em boas mãos</p>
+            <div class="actions" style="width:100%; max-width:320px">
+                <button class="btn-primary" onclick="openNewModal()">AGENDAR MEU HORÁRIO</button>
             </div>
         </section>
     </div>
 
     <div id="modalAgendar" class="modal" onclick="closeOutside(event, 'modalAgendar')">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <h3 id="ag-titulo">Agendar</h3>
+            <h3 id="ag-titulo" style="margin-top:0">Agendar</h3>
             <input type="hidden" id="edit-id">
             <input type="text" id="nome-ag" disabled>
             <div class="input-container">
-                <input type="text" id="data-ag" placeholder="DD/MM/AAAA" maxlength="10">
+                <input type="text" id="data-ag" placeholder="Data: DD/MM/AAAA" maxlength="10">
                 <img src="https://cdn-icons-png.flaticon.com/512/591/591576.png" class="custom-cal-icon" onclick="toggleCalCliente()">
-                <div id="pop-cal-cliente" style="display:none; position:absolute; background:#222; width:100%; border:1px solid var(--gold); z-index:100; padding:10px; top:50px; border-radius:8px">
+                <div id="pop-cal-cliente" style="display:none; position:absolute; background:#222; width:100%; border:1px solid var(--gold); z-index:100; padding:10px; top:52px; border-radius:8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5)">
                     <div class="cal-grid" id="grid-cliente"></div>
                 </div>
             </div>
@@ -86,33 +89,34 @@
                 <option value="50">Cabelo + Barba - R$ 50</option>
                 <option value="15">Sobrancelha - R$ 15</option>
                 <option value="60">Corte + Barba + Sobrancelha - R$ 60</option>
-                <option value="15">Pezinho e Acabamento - R$ 15</option>
             </select>
-            <button class="btn-primary" onclick="agendar()">CONFIRMAR</button>
+            <button class="btn-primary" onclick="agendar()">CONFIRMAR AGENDAMENTO</button>
         </div>
     </div>
 
     <div id="modalNotificacoes" class="modal" onclick="closeOutside(event, 'modalNotificacoes')">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <h3>Notificações</h3>
-            <div id="listaNotificacoes" style="max-height:300px; overflow-y:auto"></div>
-            <button class="btn-primary" style="background:var(--danger); color:white; margin-top:15px" onclick="limparNotificacoes()">APAGAR SELECIONADAS</button>
+            <h3 style="margin-top:0">Notificações</h3>
+            <div id="listaNotificacoes"></div>
+            <button class="btn-primary" style="background:var(--danger); color:white; margin-top:15px; padding:12px" onclick="limparNotificacoes()">APAGAR SELECIONADAS</button>
+            <button class="btn-primary" style="background:transparent; color:#999; border:none; margin-top:10px" onclick="closeModal('modalNotificacoes')">FECHAR</button>
         </div>
     </div>
 
     <div id="modalMeusCortes" class="modal" onclick="closeOutside(event, 'modalMeusCortes')">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <h3>Meus Cortes</h3>
+            <h3 style="margin-top:0">Meus Cortes</h3>
             <div id="listaMeusCortes"></div>
+            <button class="btn-primary" style="background:transparent; color:#999; border:none; margin-top:15px" onclick="closeModal('modalMeusCortes')">FECHAR</button>
         </div>
     </div>
 
     <div id="modalPerfil" class="modal" onclick="closeOutside(event, 'modalPerfil')">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <h3>Meu Perfil</h3>
-            <label style="font-size:0.8rem; color:var(--gold)">E-mail (não alterável)</label>
+            <h3 style="margin-top:0">Meu Perfil</h3>
+            <label style="font-size:0.8rem; color:var(--gold)">E-mail (Login)</label>
             <input type="text" id="p-email" disabled>
-            <label style="font-size:0.8rem; color:var(--gold)">Nome</label>
+            <label style="font-size:0.8rem; color:var(--gold)">Nome Completo</label>
             <input type="text" id="p-nome">
             <label style="font-size:0.8rem; color:var(--gold)">Tipo de Cabelo</label>
             <select id="p-cabelo">
@@ -121,9 +125,9 @@
                 <option value="Cacheado">Cacheado</option>
                 <option value="Crespo">Crespo</option>
             </select>
-            <label style="font-size:0.8rem; color:var(--gold)">Nova Senha</label>
-            <input type="password" id="p-pass" placeholder="Vazio para manter atual">
-            <button class="btn-primary" onclick="salvarPerfil()">SALVAR ALTERAÇÕES</button>
+            <label style="font-size:0.8rem; color:var(--gold)">Mudar Senha (Opcional)</label>
+            <input type="password" id="p-pass" placeholder="Nova senha se desejar">
+            <button class="btn-primary" onclick="salvarPerfil()">ATUALIZAR DADOS</button>
         </div>
     </div>
 
