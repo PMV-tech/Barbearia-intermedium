@@ -13,9 +13,7 @@ function checkLogin() {
 function login() {
     const e = document.getElementById('l-email').value, p = document.getElementById('l-pass').value;
     const remember = document.getElementById('l-remember').checked;
-
     if(e === 'admin@admin.com' && p === 'admin') return window.location.href = 'admin.html';
-    
     const saved = JSON.parse(localStorage.getItem('u_' + e));
     if(saved && saved.senha === p) {
         user = saved;
@@ -29,26 +27,12 @@ function login() {
 function start() {
     document.getElementById('authScreen').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
-    document.getElementById('heroNome').innerText = 'OLÁ, ' + user.nome.toUpperCase();
+    document.getElementById('heroNome').innerText = 'OLÁ, ' + user.nome.split(' ')[0].toUpperCase();
     document.getElementById('menuNome').innerText = user.nome;
     document.getElementById('p-email').value = user.email;
     document.getElementById('p-nome').value = user.nome;
     document.getElementById('p-cabelo').value = user.cabelo || 'Liso';
     renderNotifs();
-}
-
-function salvarPerfil() {
-    const novoNome = document.getElementById('p-nome').value;
-    const novoCabelo = document.getElementById('p-cabelo').value;
-    const novaSenha = document.getElementById('p-pass').value;
-    if(!novoNome) return alert("O nome não pode ser vazio!");
-    user.nome = novoNome;
-    user.cabelo = novoCabelo;
-    if(novaSenha) user.senha = novaSenha;
-    localStorage.setItem('u_' + user.email, JSON.stringify(user));
-    localStorage.setItem('saas_user', JSON.stringify(user));
-    alert("Perfil atualizado!");
-    location.reload();
 }
 
 function renderNotifs() {
@@ -57,13 +41,13 @@ function renderNotifs() {
     const badge = document.getElementById('notifBadge');
     badge.style.display = notifs.length ? 'inline-block' : 'none';
     badge.innerText = notifs.length;
-    div.innerHTML = notifs.length ? '' : '<p>Nenhuma notificação.</p>';
+    div.innerHTML = notifs.length ? '' : '<p style="text-align:center; color:#666">Nenhuma notificação nova.</p>';
     notifs.forEach((n, idx) => {
         div.innerHTML += `
         <div class="notif-item">
             <input type="checkbox" class="n-check">
             <div class="notif-content">
-                <strong>${n.data}</strong><br>${n.msg}
+                <small style="color:var(--gold)">${n.data}</small><br>${n.msg}
             </div>
         </div>`;
     });
@@ -79,7 +63,7 @@ function limparNotificacoes() {
 }
 
 function openNewModal() {
-    document.getElementById('ag-titulo').innerText = "Agendar";
+    document.getElementById('ag-titulo').innerText = "Agendar Horário";
     document.getElementById('edit-id').value = "";
     document.getElementById('data-ag').value = "";
     document.getElementById('nome-ag').value = user.nome;
@@ -91,7 +75,7 @@ function openNewModal() {
 function agendar() {
     const d = document.getElementById('data-ag').value;
     const eid = document.getElementById('edit-id').value;
-    if(d.length < 10) return alert("Data inválida!");
+    if(d.length < 10) return alert("Por favor, selecione uma data!");
     const ag = {
         id: eid ? parseInt(eid) : Date.now(),
         cliente: user.nome, email: user.email,
@@ -102,7 +86,7 @@ function agendar() {
     };
     if(eid) db = db.map(i => i.id === ag.id ? ag : i); else db.push(ag);
     localStorage.setItem('barbearia_db', JSON.stringify(db));
-    alert("Confirmado!");
+    alert("Horário agendado com sucesso!");
     closeModal('modalAgendar');
     renderMeus();
 }
@@ -110,35 +94,24 @@ function agendar() {
 function renderMeus() {
     const div = document.getElementById('listaMeusCortes');
     const meus = db.filter(i => i.email === user.email);
-    div.innerHTML = meus.length ? '' : '<p>Sem agendamentos.</p>';
+    div.innerHTML = meus.length ? '' : '<p style="text-align:center; color:#666">Você ainda não tem agendamentos.</p>';
     meus.reverse().forEach(i => {
         div.innerHTML += `
-        <div style="background:#222; padding:12px; border-radius:8px; margin-bottom:8px; border-left:4px solid var(--gold)">
-            <strong>${i.data} - ${i.hora}</strong><br>${i.servico}<br>
-            <div style="margin-top:10px">
-                <button onclick="editarAgendamento(${i.id})" style="color:var(--gold); background:none; border:none; cursor:pointer">EDITAR</button>
-                <button onclick="excluirCorte(${i.id})" style="color:var(--danger); background:none; border:none; cursor:pointer; margin-left:15px">EXCLUIR</button>
+        <div style="background:#222; padding:15px; border-radius:10px; margin-bottom:12px; border-left:4px solid var(--gold)">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start">
+                <div>
+                    <strong>${i.data} às ${i.hora}</strong><br>
+                    <small style="color:#999">${i.servico}</small>
+                </div>
+                <span style="font-size:0.7rem; background:#333; padding:2px 6px; border-radius:4px">${i.status.toUpperCase()}</span>
             </div>
+            ${i.status === 'pendente' ? `
+            <div style="margin-top:15px; display:flex; gap:20px">
+                <button onclick="editarAgendamento(${i.id})" style="color:var(--gold); background:none; border:none; font-size:0.9rem">EDITAR</button>
+                <button onclick="excluirCorte(${i.id})" style="color:var(--danger); background:none; border:none; font-size:0.9rem">CANCELAR</button>
+            </div>` : ''}
         </div>`;
     });
-}
-
-function editarAgendamento(id) {
-    const item = db.find(x => x.id === id);
-    if(!item) return;
-    openNewModal();
-    document.getElementById('ag-titulo').innerText = "Editar Horário";
-    document.getElementById('edit-id').value = item.id;
-    document.getElementById('data-ag').value = item.data;
-    document.getElementById('hora-ag').value = item.hora;
-    closeModal('modalMeusCortes');
-}
-
-function excluirCorte(id) {
-    if(!confirm("Excluir?")) return;
-    db = db.filter(i => i.id !== id);
-    localStorage.setItem('barbearia_db', JSON.stringify(db));
-    renderMeus();
 }
 
 function toggleMenu() { 
@@ -157,11 +130,24 @@ function toggleCalCliente() {
     }
 }
 
+function salvarPerfil() {
+    const novoNome = document.getElementById('p-nome').value;
+    if(!novoNome) return alert("O nome é obrigatório!");
+    user.nome = novoNome;
+    user.cabelo = document.getElementById('p-cabelo').value;
+    const ns = document.getElementById('p-pass').value;
+    if(ns) user.senha = ns;
+    localStorage.setItem('u_' + user.email, JSON.stringify(user));
+    localStorage.setItem('saas_user', JSON.stringify(user));
+    alert("Perfil atualizado!");
+    location.reload();
+}
+
 function cadastrar() {
-    const n = document.getElementById('r-nome').value, e = document.getElementById('r-email').value, p = document.getElementById('r-pass').value, c = document.getElementById('r-cabelo').value;
-    if(!n || !e || !p) return alert("Erro!");
-    localStorage.setItem('u_' + e, JSON.stringify({ nome: n, email: e, senha: p, cabelo: c }));
-    alert("Cadastrado!");
+    const n = document.getElementById('r-nome').value, e = document.getElementById('r-email').value, p = document.getElementById('r-pass').value;
+    if(!n || !e || !p) return alert("Preencha todos os campos!");
+    localStorage.setItem('u_' + e, JSON.stringify({ nome: n, email: e, senha: p, cabelo: document.getElementById('r-cabelo').value }));
+    alert("Cadastro realizado!");
     toggleAuth(false);
 }
 
