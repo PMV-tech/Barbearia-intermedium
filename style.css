@@ -7,50 +7,86 @@
     --success: #2ecc71;
 }
 
-body { font-family: 'Segoe UI', sans-serif; background: var(--dark); color: var(--text); margin: 0; overflow-x: hidden; }
+* { box-sizing: border-box; }
+
+body { 
+    font-family: 'Segoe UI', sans-serif; 
+    background: var(--dark); 
+    color: var(--text); 
+    margin: 0; 
+    overflow-x: hidden; 
+    -webkit-tap-highlight-color: transparent;
+}
 
 /* HEADER & MENU */
-.top-bar { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box; z-index: 1000; }
-.menu-hamburguer { font-size: 30px; color: var(--gold); cursor: pointer; background: none; border: none; outline: none; }
-.side-menu { position: fixed; top: 0; left: -300px; width: 280px; height: 100%; background: var(--card); transition: 0.4s ease; z-index: 2000; padding: 60px 20px; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+.top-bar { position: fixed; top: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: rgba(15,15,15,0.9); backdrop-filter: blur(5px); z-index: 1000; }
+.menu-hamburguer { font-size: 28px; color: var(--gold); cursor: pointer; background: none; border: none; }
+.side-menu { position: fixed; top: 0; left: -100%; width: 80%; max-width: 300px; height: 100%; background: var(--card); transition: 0.4s ease; z-index: 2000; padding: 60px 20px; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
 .side-menu.active { left: 0; }
-.menu-item { width: 100%; text-align: left; background: none; border: none; color: white; padding: 15px 0; border-bottom: 1px solid #333; cursor: pointer; font-size: 1rem; display: flex; justify-content: space-between; align-items: center; }
-.menu-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1500; }
+.menu-item { width: 100%; text-align: left; background: none; border: none; color: white; padding: 18px 0; border-bottom: 1px solid #333; cursor: pointer; font-size: 1.1rem; }
+.menu-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1500; }
 
 /* INPUTS & ICONES */
-.input-container { position: relative; width: 100%; margin-bottom: 10px; }
-.input-container input { padding-right: 45px !important; width: 100%; box-sizing: border-box; }
-.custom-cal-icon { position: absolute; right: 12px; top: 12px; width: 22px; cursor: pointer; filter: invert(1); z-index: 5; }
-.eye-icon { position: absolute; right: 15px; top: 12px; color: var(--gold); cursor: pointer; z-index: 10; }
+.input-container { position: relative; width: 100%; margin-bottom: 12px; }
+.input-container input { padding-right: 45px !important; }
+.custom-cal-icon { position: absolute; right: 12px; top: 12px; width: 22px; filter: invert(1); }
+.eye-icon { position: absolute; right: 15px; top: 12px; color: var(--gold); padding: 5px; }
 
 /* LOGIN EXTRAS */
-.login-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin: 10px 0 20px 0; color: #bbb; }
-.login-footer label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
-.login-footer a { color: var(--gold); text-decoration: none; }
+.login-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin: 5px 0 20px 0; color: #bbb; }
+.login-footer label { display: flex; align-items: center; gap: 8px; }
 
-/* MODAIS */
-.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; align-items: center; justify-content: center; }
-.modal-content { background: var(--card); padding: 25px; width: 92%; max-width: 400px; border-radius: 15px; border: 1px solid #333; position: relative; }
+/* MODAIS RESPONSIVOS */
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; align-items: center; justify-content: center; padding: 10px; }
+.modal-content { 
+    background: var(--card); 
+    padding: 20px; 
+    width: 100%; 
+    max-width: 450px; 
+    border-radius: 15px; 
+    border: 1px solid #333; 
+    max-height: 90vh; 
+    overflow-y: auto; 
+}
 
-.btn-primary { background: var(--gold); color: #000; padding: 15px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; width: 100%; margin-top: 5px; }
-input, select, textarea { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; }
-input:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: var(--gold); color: #000; padding: 16px; font-weight: bold; border-radius: 8px; border: none; width: 100%; font-size: 1rem; text-transform: uppercase; }
+input, select, textarea { width: 100%; padding: 14px; background: #222; border: 1px solid #444; color: white; border-radius: 8px; margin-bottom: 12px; font-size: 16px; }
 
-/* ADMIN TABS & SPACING */
-.tab-nav { display: flex; gap: 10px; margin-bottom: 20px; }
-.tab-btn { flex: 1; padding: 12px; border: 1px solid var(--gold); background: transparent; color: var(--gold); border-radius: 8px; cursor: pointer; font-weight: bold; }
+/* ADMIN - CARDS MOBILE */
+.tab-nav { display: flex; gap: 8px; margin-bottom: 20px; }
+.tab-btn { flex: 1; padding: 14px 5px; border: 1px solid var(--gold); background: transparent; color: var(--gold); border-radius: 8px; font-weight: bold; font-size: 0.85rem; }
 .tab-btn.active { background: var(--gold); color: #000; }
-.btn-filter-admin { margin-bottom: 15px !important; }
 
-/* CALENDARIO POPUP */
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 10px; }
-.cal-day { padding: 10px 5px; border: 1px solid #333; text-align: center; cursor: pointer; font-size: 0.8rem; border-radius: 4px; background: #111; }
+.admin-item { 
+    background: #222; 
+    padding: 15px; 
+    border-radius: 10px; 
+    margin-bottom: 12px; 
+    border-left: 4px solid var(--gold); 
+    display: flex; 
+    flex-direction: column; /* Empilha no mobile */
+    gap: 10px;
+}
+
+.admin-item-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.admin-actions { display: flex; justify-content: flex-end; gap: 15px; border-top: 1px solid #333; padding-top: 10px; }
+
+/* CALENDÁRIO */
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-day { padding: 12px 0; border: 1px solid #333; text-align: center; font-size: 0.8rem; border-radius: 5px; background: #111; }
 .cal-day.selected { background: var(--gold) !important; color: #000; }
 
-.hero { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background-size: cover; background-position: center; }
-.perfil-barbeiro { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--gold); margin-bottom: 15px; }
+.hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; padding-top: 80px; }
+.perfil-barbeiro { width: 110px; height: 110px; border-radius: 50%; border: 3px solid var(--gold); margin-bottom: 15px; }
 
-/* NOTIFICAÇÃO */
-.notif-item { background: #222; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid var(--gold); display: flex; align-items: flex-start; gap: 12px; }
-.n-check { width: 18px !important; height: 18px !important; margin: 0 !important; cursor: pointer; flex-shrink: 0; }
-.notif-content { font-size: 0.9rem; line-height: 1.4; color: var(--text); }
+/* NOTIFICAÇÃO - CORRIGIDA E FLEXÍVEL */
+.notif-item { background: #222; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--gold); display: flex; align-items: flex-start; gap: 12px; }
+.n-check { width: 22px !important; height: 22px !important; margin-top: 2px !important; flex-shrink: 0; }
+.notif-content { font-size: 0.95rem; line-height: 1.5; color: var(--text); flex-grow: 1; }
+
+/* MEDIA QUERIES PARA TELAS MAIORES */
+@media (min-width: 600px) {
+    .admin-item { flex-direction: row; justify-content: space-between; align-items: center; }
+    .admin-actions { border-top: none; padding-top: 0; }
+    .tab-btn { font-size: 1rem; }
+}
