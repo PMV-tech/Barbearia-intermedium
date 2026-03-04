@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Admin - Barbearia</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -11,35 +11,37 @@
     
     <div class="top-bar">
         <button class="menu-hamburguer" onclick="toggleMenu()">☰</button>
-        <a href="index.html" style="color:var(--danger); text-decoration:none; font-weight:bold;">SAIR</a>
+        <span style="color:var(--gold); font-weight:bold">PAINEL ADMIN</span>
+        <a href="index.html" style="color:var(--danger); text-decoration:none; font-weight:bold; font-size:0.9rem">SAIR</a>
     </div>
 
     <nav class="side-menu" id="sideMenu">
-        <h3>Admin</h3>
+        <h3 style="color:var(--gold)">Gerenciamento</h3>
         <button class="menu-item" onclick="baixarRelatorioCSV()">📊 Baixar Relatório (CSV)</button>
         <button class="menu-item" onclick="openModal('modalMsg')">✉️ Notificar Cliente</button>
     </nav>
 
-    <div style="padding: 80px 20px; max-width: 600px; margin: 0 auto;">
-        <h2 style="color:var(--gold); text-align:center">Painel Admin</h2>
+    <div style="padding: 90px 15px 40px; max-width: 800px; margin: 0 auto; box-sizing: border-box;">
         
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px">
-            <div style="background:var(--card); padding:15px; border-radius:12px; text-align:center; border-bottom:3px solid var(--gold)">
-                <small>PENDENTE</small><p id="totalP" style="font-size:1.5rem; margin:5px 0">R$ 0</p>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:25px">
+            <div style="background:var(--card); padding:15px; border-radius:12px; text-align:center; border-bottom:4px solid var(--gold)">
+                <small style="color:#999">A RECEBER</small>
+                <p id="totalP" style="font-size:1.4rem; margin:5px 0; font-weight:bold">R$ 0</p>
             </div>
-            <div style="background:var(--card); padding:15px; border-radius:12px; text-align:center; border-bottom:3px solid var(--success)">
-                <small>CONCLUÍDO</small><p id="totalC" style="font-size:1.5rem; margin:5px 0">R$ 0</p>
+            <div style="background:var(--card); padding:15px; border-radius:12px; text-align:center; border-bottom:4px solid var(--success)">
+                <small style="color:#999">CONCLUÍDO</small>
+                <p id="totalC" style="font-size:1.4rem; margin:5px 0; font-weight:bold">R$ 0</p>
             </div>
         </div>
 
-        <button class="btn-primary btn-filter-admin" onclick="toggleCalAdmin()">FILTRAR POR DATA</button>
+        <button class="btn-primary" style="margin-bottom:20px; padding:12px" onclick="toggleCalAdmin()">🔍 FILTRAR POR DATA</button>
         
-        <div id="cal-admin" style="display:none; background:#222; padding:15px; border-radius:10px; margin-bottom:15px">
+        <div id="cal-admin" style="display:none; background:#222; padding:15px; border-radius:10px; margin-bottom:20px; box-shadow: 0 5px 15px rgba(0,0,0,0.5)">
             <div class="cal-grid" id="grid-admin"></div>
         </div>
 
         <div class="tab-nav">
-            <button id="tab-agenda" class="tab-btn active" onclick="setTab('agenda')">AGENDA</button>
+            <button id="tab-agenda" class="tab-btn active" onclick="setTab('agenda')">PRÓXIMOS CORTES</button>
             <button id="tab-his" class="tab-btn" onclick="setTab('historico')">HISTÓRICO</button>
         </div>
 
@@ -48,10 +50,12 @@
 
     <div id="modalMsg" class="modal" onclick="closeOutside(event, 'modalMsg')">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <h3>Notificar Cliente</h3>
-            <select id="msg-destino"></select>
-            <textarea id="msg-texto" placeholder="Mensagem..." style="height:100px"></textarea>
-            <button class="btn-primary" onclick="enviarNotif()">ENVIAR</button>
+            <h3 style="margin-top:0">Enviar Notificação</h3>
+            <label style="font-size:0.8rem">Destinatário:</label>
+            <select id="msg-destino" style="margin-top:5px"></select>
+            <textarea id="msg-texto" placeholder="Escreva a mensagem aqui..." style="height:120px"></textarea>
+            <button class="btn-primary" onclick="enviarNotif()">ENVIAR AGORA</button>
+            <button class="btn-primary" style="background:transparent; color:#999; border:none; margin-top:10px" onclick="closeModal('modalMsg')">CANCELAR</button>
         </div>
     </div>
 
