@@ -33,8 +33,8 @@ function render() {
                     </div>
                 </div>
                 <div class="admin-actions">
-                    ${item.status === 'pendente' ? `<button onclick="setStatus(${item.id}, 'concluido')" style="color:var(--success); background:none; border:none; font-weight:bold">CONCLUIR ✓</button>` : ''}
-                    <button onclick="excluirAdmin(${item.id})" style="color:var(--danger); background:none; border:none">EXCLUIR</button>
+                    ${item.status === 'pendente' ? `<button onclick="setStatus(${item.id}, 'concluido')" style="color:var(--success); background:none; border:none; font-weight:bold">Concluir ✓</button>` : ''}
+                    <button onclick="excluirAdmin(${item.id})" style="color:var(--danger); background:none; border:none">Remover</button>
                 </div>
             </div>`;
         }
@@ -96,3 +96,4 @@ function enviarNotif() {
 }
 
 render();
+
