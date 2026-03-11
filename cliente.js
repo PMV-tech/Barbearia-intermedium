@@ -1,6 +1,13 @@
+// Aguarda o supabase estar disponível
+if (typeof supabase === 'undefined') {
+    console.error('Supabase não foi carregado! Verifique a ordem dos scripts.');
+}
+
 // Configuração inicial
 let user = null;
 let db = [];
+
+// Resto do seu código continua igual...
 
 // Função para verificar se o usuário está logado
 async function checkLogin() {
@@ -484,3 +491,4 @@ document.getElementById('data-ag').addEventListener('input', (e) => {
     if (v.length > 5) v = v.substring(0,5) + '/' + v.substring(5,9);
     e.target.value = v;
 });
+
