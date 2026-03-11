@@ -76,6 +76,12 @@ async function login() {
     const password = document.getElementById('l-pass').value;
     const remember = document.getElementById('l-remember').checked;
 
+    // Validação básica
+    if (!email || !password) {
+        alert('Preencha todos os campos!');
+        return;
+    }
+
     try {
         // Login admin
         if (email === 'admin@admin.com' && password === 'admin') {
@@ -113,7 +119,13 @@ async function login() {
         }
     } catch (error) {
         console.error('Erro no login:', error);
-        alert('E-mail ou senha incorretos!');
+        
+        // Mensagens de erro amigáveis
+        if (error.message.includes('Invalid login credentials')) {
+            alert('E-mail ou senha incorretos!');
+        } else {
+            alert('Erro ao fazer login: ' + error.message);
+        }
     }
 }
 
@@ -130,8 +142,17 @@ async function cadastrar() {
     const senha = document.getElementById('r-pass').value;
     const cabelo = document.getElementById('r-cabelo').value;
 
-    if (!nome || !email || !senha) {
+    // Validações
+    if (!nome || !email || !senha || !cabelo) {
         return alert('Preencha todos os campos!');
+    }
+    
+    if (senha.length < 6) {
+        return alert('A senha deve ter pelo menos 6 caracteres!');
+    }
+    
+    if (!email.includes('@') || !email.includes('.')) {
+        return alert('Digite um e-mail válido!');
     }
 
     try {
@@ -168,17 +189,31 @@ async function cadastrar() {
             // Se erro na tabela, tenta fazer login anyway
         }
 
-        alert('Cadastro realizado com sucesso! Verifique seu email para confirmar.');
+        alert('Cadastro realizado com sucesso! Verifique seu email para confirmar o cadastro.');
+        
+        // Volta para a tela de login
         toggleAuth(false);
         
-        // Limpa o formulário
+        // Preenche o email no login
+        document.getElementById('l-email').value = email;
+        
+        // Limpa o formulário de cadastro
         document.getElementById('r-nome').value = '';
         document.getElementById('r-email').value = '';
         document.getElementById('r-pass').value = '';
+        document.getElementById('r-cabelo').value = '';
         
     } catch (error) {
         console.error('Erro no cadastro:', error);
-        alert('Erro ao cadastrar: ' + error.message);
+        
+        // Mensagens de erro amigáveis
+        if (error.message.includes('Password should be at least 6 characters')) {
+            alert('A senha deve ter pelo menos 6 caracteres!');
+        } else if (error.message.includes('User already registered')) {
+            alert('Este e-mail já está cadastrado!');
+        } else {
+            alert('Erro ao cadastrar: ' + error.message);
+        }
     }
 }
 
@@ -444,6 +479,10 @@ async function salvarPerfil() {
         if (userError) throw userError;
 
         if (novaSenha) {
+            if (novaSenha.length < 6) {
+                return alert('A nova senha deve ter pelo menos 6 caracteres!');
+            }
+            
             const { error: passError } = await supabase.auth.updateUser({
                 password: novaSenha
             });
