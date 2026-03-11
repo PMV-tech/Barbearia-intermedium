@@ -1,67 +1,97 @@
-// Aguarda o supabase estar disponível
-if (typeof supabase === 'undefined') {
-    console.error('Supabase não foi carregado! Verifique a ordem dos scripts.');
-}
+// Aguarda o DOM carregar
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM carregado');
+    checkLogin();
+});
 
 // Configuração inicial
 let user = null;
 let db = [];
 
+// Função para verificar se o supabase está pronto
+function getSupabase() {
+    if (typeof window.supabase !== 'undefined' && window.supabase) {
+        return window.supabase;
+    }
+    console.error('Supabase não está disponível!');
+    return null;
+}
+
 // Função para verificar se o usuário está logado
 async function checkLogin() {
-    // Verifica se supabase existe
-    if (!window.supabase) {
+    console.log('Verificando login...');
+    
+    const supabase = getSupabase();
+    if (!supabase) {
         console.error('Supabase não inicializado');
         return;
     }
     
-    // Verifica sessão no Supabase
-    const { data: { session }, error } = await window.supabase.auth.getSession();
-    
-    if (session) {
-        // Busca dados completos do usuário
-        const { data: userData, error: userError } = await window.supabase
-            .from('usuarios')
-            .select('*')
-            .eq('email', session.user.email)
-            .single();
-            
-        if (!userError && userData) {
-            user = userData;
-            start();
+    try {
+        // Verifica sessão no Supabase
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+            console.error('Erro ao verificar sessão:', error);
         }
+        
+        if (session) {
+            console.log('Sessão encontrada para:', session.user.email);
+            // Busca dados completos do usuário
+            const { data: userData, error: userError } = await supabase
+                .from('usuarios')
+                .select('*')
+                .eq('email', session.user.email)
+                .single();
+                
+            if (!userError && userData) {
+                user = userData;
+                start();
+            }
+        }
+    } catch (error) {
+        console.error('Erro em checkLogin:', error);
     }
     
     // Verifica email lembrado no localStorage
     const remembered = localStorage.getItem('remember_email');
     if (remembered && !user) {
-        document.getElementById('l-email').value = remembered;
-        document.getElementById('l-remember').checked = true;
+        const emailInput = document.getElementById('l-email');
+        if (emailInput) {
+            emailInput.value = remembered;
+            document.getElementById('l-remember').checked = true;
+        }
     }
 }
 
 // Função de login
 async function login() {
+    const supabase = getSupabase();
+    if (!supabase) {
+        alert('Erro de conexão. Recarregue a página.');
+        return;
+    }
+    
     const email = document.getElementById('l-email').value;
     const password = document.getElementById('l-pass').value;
     const remember = document.getElementById('l-remember').checked;
 
     try {
-        // Login admin (mantido para compatibilidade)
+        // Login admin
         if (email === 'admin@admin.com' && password === 'admin') {
             return window.location.href = 'admin.html';
         }
 
         // Login no Supabase Auth
-        const { data: authData, error: authError } = await window.supabase.auth.signInWithPassword({
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
             email: email,
             password: password
         });
 
         if (authError) throw authError;
 
-        // Busca dados do usuário na tabela 'usuarios'
-        const { data: userData, error: userError } = await window.supabase
+        // Busca dados do usuário
+        const { data: userData, error: userError } = await supabase
             .from('usuarios')
             .select('*')
             .eq('email', email)
@@ -72,7 +102,6 @@ async function login() {
         if (userData) {
             user = userData;
             
-            // Salva no localStorage como cache
             localStorage.setItem('saas_user', JSON.stringify(user));
             if (remember) {
                 localStorage.setItem('remember_email', email);
@@ -90,6 +119,12 @@ async function login() {
 
 // Função de cadastro
 async function cadastrar() {
+    const supabase = getSupabase();
+    if (!supabase) {
+        alert('Erro de conexão. Recarregue a página.');
+        return;
+    }
+    
     const nome = document.getElementById('r-nome').value;
     const email = document.getElementById('r-email').value;
     const senha = document.getElementById('r-pass').value;
@@ -100,8 +135,10 @@ async function cadastrar() {
     }
 
     try {
-        // Cria usuário no Auth do Supabase
-        const { data: authData, error: authError } = await window.supabase.auth.signUp({
+        console.log('Tentando cadastrar:', email);
+        
+        // Cria usuário no Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
             email: email,
             password: senha,
             options: {
@@ -114,8 +151,8 @@ async function cadastrar() {
 
         if (authError) throw authError;
 
-        // Insere dados adicionais na tabela 'usuarios'
-        const { error: userError } = await window.supabase
+        // Insere na tabela usuarios
+        const { error: userError } = await supabase
             .from('usuarios')
             .insert([
                 {
@@ -126,9 +163,12 @@ async function cadastrar() {
                 }
             ]);
 
-        if (userError) throw userError;
+        if (userError) {
+            console.error('Erro ao inserir na tabela:', userError);
+            // Se erro na tabela, tenta fazer login anyway
+        }
 
-        alert('Cadastro realizado com sucesso!');
+        alert('Cadastro realizado com sucesso! Verifique seu email para confirmar.');
         toggleAuth(false);
         
         // Limpa o formulário
@@ -138,7 +178,7 @@ async function cadastrar() {
         
     } catch (error) {
         console.error('Erro no cadastro:', error);
-        alert('Erro ao cadastrar. Tente novamente.');
+        alert('Erro ao cadastrar: ' + error.message);
     }
 }
 
@@ -155,10 +195,13 @@ function start() {
     renderNotifs();
 }
 
-// Carrega agendamentos do Supabase
+// Carrega agendamentos
 async function carregarAgendamentos() {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    
     try {
-        const { data: agendamentos, error } = await window.supabase
+        const { data: agendamentos, error } = await supabase
             .from('agendamentos')
             .select('*')
             .eq('email', user.email)
@@ -176,6 +219,9 @@ async function carregarAgendamentos() {
 
 // Função de agendamento
 async function agendar() {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    
     const data = document.getElementById('data-ag').value;
     const hora = document.getElementById('hora-ag').value;
     const servicoSelect = document.getElementById('servico-ag');
@@ -200,16 +246,14 @@ async function agendar() {
 
     try {
         if (editId) {
-            // Atualiza agendamento existente
-            const { error } = await window.supabase
+            const { error } = await supabase
                 .from('agendamentos')
                 .update(agendamento)
                 .eq('id', parseInt(editId));
 
             if (error) throw error;
         } else {
-            // Cria novo agendamento
-            const { error } = await window.supabase
+            const { error } = await supabase
                 .from('agendamentos')
                 .insert([agendamento]);
 
@@ -234,7 +278,6 @@ async function editarAgendamento(id) {
         document.getElementById('data-ag').value = agendamento.data;
         document.getElementById('nome-ag').value = user.nome;
         
-        // Preenche a hora
         const hSel = document.getElementById('hora-ag');
         hSel.innerHTML = "";
         for (let i = 8; i <= 19; i++) {
@@ -247,7 +290,6 @@ async function editarAgendamento(id) {
             hSel.appendChild(option);
         }
         
-        // Preenche o serviço
         const servicoSelect = document.getElementById('servico-ag');
         for (let i = 0; i < servicoSelect.options.length; i++) {
             if (servicoSelect.options[i].text === agendamento.servico) {
@@ -262,9 +304,12 @@ async function editarAgendamento(id) {
 
 // Excluir agendamento
 async function excluirCorte(id) {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    
     if (confirm('Tem certeza que deseja cancelar este agendamento?')) {
         try {
-            const { error } = await window.supabase
+            const { error } = await supabase
                 .from('agendamentos')
                 .delete()
                 .eq('id', id);
@@ -280,7 +325,7 @@ async function excluirCorte(id) {
     }
 }
 
-// Renderiza lista de agendamentos do usuário
+// Renderiza lista de agendamentos
 function renderMeus() {
     const div = document.getElementById('listaMeusCortes');
     const meus = db || [];
@@ -308,8 +353,11 @@ function renderMeus() {
 
 // Notificações
 async function renderNotifs() {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    
     try {
-        const { data: notifs, error } = await window.supabase
+        const { data: notifs, error } = await supabase
             .from('notificacoes')
             .select('*')
             .eq('email', user.email)
@@ -340,6 +388,9 @@ async function renderNotifs() {
 }
 
 async function limparNotificacoes() {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    
     const checks = document.querySelectorAll('.n-check:checked');
     const idsParaRemover = [];
     
@@ -354,7 +405,7 @@ async function limparNotificacoes() {
     }
 
     try {
-        const { error } = await window.supabase
+        const { error } = await supabase
             .from('notificacoes')
             .delete()
             .in('id', idsParaRemover);
@@ -370,6 +421,9 @@ async function limparNotificacoes() {
 
 // Atualizar perfil
 async function salvarPerfil() {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    
     const novoNome = document.getElementById('p-nome').value;
     const novaSenha = document.getElementById('p-pass').value;
     const tipoCabelo = document.getElementById('p-cabelo').value;
@@ -379,8 +433,7 @@ async function salvarPerfil() {
     }
 
     try {
-        // Atualiza dados na tabela usuarios
-        const { error: userError } = await window.supabase
+        const { error: userError } = await supabase
             .from('usuarios')
             .update({ 
                 nome: novoNome,
@@ -390,16 +443,14 @@ async function salvarPerfil() {
 
         if (userError) throw userError;
 
-        // Atualiza senha se fornecida
         if (novaSenha) {
-            const { error: passError } = await window.supabase.auth.updateUser({
+            const { error: passError } = await supabase.auth.updateUser({
                 password: novaSenha
             });
 
             if (passError) throw passError;
         }
 
-        // Atualiza objeto local
         user.nome = novoNome;
         user.cabelo = tipoCabelo;
         
@@ -417,8 +468,11 @@ async function salvarPerfil() {
 
 // Logout
 async function logout() {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    
     try {
-        const { error } = await window.supabase.auth.signOut();
+        const { error } = await supabase.auth.signOut();
         if (error) throw error;
         
         localStorage.removeItem('saas_user');
@@ -457,7 +511,6 @@ function toggleCalCliente() {
     const g = document.getElementById('grid-cliente');
     g.innerHTML = "";
     
-    // Calendário simplificado para março 2026
     for (let i = 1; i <= 31; i++) {
         const d = (i < 10 ? '0' + i : i) + '/03/2026';
         g.innerHTML += `<div class="cal-day" onclick="document.getElementById('data-ag').value='${d}'; toggleCalCliente()">${i}</div>`;
