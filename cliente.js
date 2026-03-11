@@ -1,29 +1,137 @@
-let db = JSON.parse(localStorage.getItem('barbearia_db')) || [];
-let user = JSON.parse(localStorage.getItem('saas_user')) || null;
+// Configuração inicial
+let user = null;
+let db = [];
 
-function checkLogin() {
+// Função para verificar se o usuário está logado
+async function checkLogin() {
+    // Verifica sessão no Supabase
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (session) {
+        // Busca dados completos do usuário
+        const { data: userData, error: userError } = await supabase
+            .from('usuarios')
+            .select('*')
+            .eq('email', session.user.email)
+            .single();
+            
+        if (!userError && userData) {
+            user = userData;
+            start();
+        }
+    }
+    
+    // Verifica email lembrado no localStorage
     const remembered = localStorage.getItem('remember_email');
-    if(remembered && !user) {
+    if (remembered && !user) {
         document.getElementById('l-email').value = remembered;
         document.getElementById('l-remember').checked = true;
     }
-    if(user) start();
 }
 
-function login() {
-    const e = document.getElementById('l-email').value, p = document.getElementById('l-pass').value;
+// Função de login
+async function login() {
+    const email = document.getElementById('l-email').value;
+    const password = document.getElementById('l-pass').value;
     const remember = document.getElementById('l-remember').checked;
-    if(e === 'admin@admin.com' && p === 'admin') return window.location.href = 'admin.html';
-    const saved = JSON.parse(localStorage.getItem('u_' + e));
-    if(saved && saved.senha === p) {
-        user = saved;
-        localStorage.setItem('saas_user', JSON.stringify(user));
-        if(remember) localStorage.setItem('remember_email', e); 
-        else localStorage.removeItem('remember_email');
-        start();
-    } else alert("E-mail ou senha incorretos!");
+
+    try {
+        // Login no Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+
+        if (authError) throw authError;
+
+        // Busca dados do usuário na tabela 'usuarios'
+        const { data: userData, error: userError } = await supabase
+            .from('usuarios')
+            .select('*')
+            .eq('email', email)
+            .single();
+
+        if (userError) throw userError;
+
+        // Login admin (mantido para compatibilidade)
+        if (email === 'admin@admin.com' && password === 'admin') {
+            return window.location.href = 'admin.html';
+        }
+
+        if (userData) {
+            user = userData;
+            
+            // Salva no localStorage como cache
+            localStorage.setItem('saas_user', JSON.stringify(user));
+            if (remember) {
+                localStorage.setItem('remember_email', email);
+            } else {
+                localStorage.removeItem('remember_email');
+            }
+            
+            start();
+        }
+    } catch (error) {
+        console.error('Erro no login:', error);
+        alert('E-mail ou senha incorretos!');
+    }
 }
 
+// Função de cadastro
+async function cadastrar() {
+    const nome = document.getElementById('r-nome').value;
+    const email = document.getElementById('r-email').value;
+    const senha = document.getElementById('r-pass').value;
+    const cabelo = document.getElementById('r-cabelo').value;
+
+    if (!nome || !email || !senha) {
+        return alert('Preencha todos os campos!');
+    }
+
+    try {
+        // Cria usuário no Auth do Supabase
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: email,
+            password: senha,
+            options: {
+                data: {
+                    nome: nome,
+                    cabelo: cabelo
+                }
+            }
+        });
+
+        if (authError) throw authError;
+
+        // Insere dados adicionais na tabela 'usuarios'
+        const { error: userError } = await supabase
+            .from('usuarios')
+            .insert([
+                {
+                    email: email,
+                    nome: nome,
+                    cabelo: cabelo,
+                    created_at: new Date()
+                }
+            ]);
+
+        if (userError) throw userError;
+
+        alert('Cadastro realizado com sucesso!');
+        toggleAuth(false);
+        
+        // Limpa o formulário
+        document.getElementById('r-nome').value = '';
+        document.getElementById('r-email').value = '';
+        document.getElementById('r-pass').value = '';
+        
+    } catch (error) {
+        console.error('Erro no cadastro:', error);
+        alert('Erro ao cadastrar. Tente novamente.');
+    }
+}
+
+// Inicia a aplicação após login
 function start() {
     document.getElementById('authScreen').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
@@ -32,70 +140,143 @@ function start() {
     document.getElementById('p-email').value = user.email;
     document.getElementById('p-nome').value = user.nome;
     document.getElementById('p-cabelo').value = user.cabelo || 'Liso';
+    carregarAgendamentos();
     renderNotifs();
 }
 
-function renderNotifs() {
-    const notifs = JSON.parse(localStorage.getItem('notifs_' + user.email)) || [];
-    const div = document.getElementById('listaNotificacoes');
-    const badge = document.getElementById('notifBadge');
-    badge.style.display = notifs.length ? 'inline-block' : 'none';
-    badge.innerText = notifs.length;
-    div.innerHTML = notifs.length ? '' : '<p style="text-align:center; color:#666">Nenhuma notificação nova.</p>';
-    notifs.forEach((n, idx) => {
-        div.innerHTML += `
-        <div class="notif-item">
-            <input type="checkbox" class="n-check">
-            <div class="notif-content">
-                <small style="color:var(--gold)">${n.data}</small><br>${n.msg}
-            </div>
-        </div>`;
-    });
+// Carrega agendamentos do Supabase
+async function carregarAgendamentos() {
+    try {
+        const { data: agendamentos, error } = await supabase
+            .from('agendamentos')
+            .select('*')
+            .eq('email', user.email)
+            .order('data', { ascending: false });
+
+        if (error) throw error;
+        
+        db = agendamentos || [];
+        renderMeus();
+    } catch (error) {
+        console.error('Erro ao carregar agendamentos:', error);
+        db = [];
+    }
 }
 
-function limparNotificacoes() {
-    let notifs = JSON.parse(localStorage.getItem('notifs_' + user.email)) || [];
-    const checks = document.querySelectorAll('.n-check');
-    let novos = [];
-    checks.forEach((c, i) => { if(!c.checked) novos.push(notifs[i]); });
-    localStorage.setItem('notifs_' + user.email, JSON.stringify(novos));
-    renderNotifs();
-}
+// Função de agendamento
+async function agendar() {
+    const data = document.getElementById('data-ag').value;
+    const hora = document.getElementById('hora-ag').value;
+    const servicoSelect = document.getElementById('servico-ag');
+    const servico = servicoSelect.options[servicoSelect.selectedIndex].text;
+    const preco = parseFloat(servicoSelect.value);
+    const editId = document.getElementById('edit-id').value;
 
-function openNewModal() {
-    document.getElementById('ag-titulo').innerText = "Agendar Horário";
-    document.getElementById('edit-id').value = "";
-    document.getElementById('data-ag').value = "";
-    document.getElementById('nome-ag').value = user.nome;
-    const hSel = document.getElementById('hora-ag'); hSel.innerHTML = "";
-    for(let i=8; i<=19; i++) hSel.innerHTML += `<option value="${i}:00">${i}:00</option>`;
-    openModal('modalAgendar');
-}
+    if (data.length < 10) {
+        return alert('Por favor, selecione uma data!');
+    }
 
-function agendar() {
-    const d = document.getElementById('data-ag').value;
-    const eid = document.getElementById('edit-id').value;
-    if(d.length < 10) return alert("Por favor, selecione uma data!");
-    const ag = {
-        id: eid ? parseInt(eid) : Date.now(),
-        cliente: user.nome, email: user.email,
-        data: d, hora: document.getElementById('hora-ag').value,
-        servico: document.getElementById('servico-ag').options[document.getElementById('servico-ag').selectedIndex].text,
-        preco: parseFloat(document.getElementById('servico-ag').value),
-        status: 'pendente'
+    const agendamento = {
+        cliente: user.nome,
+        email: user.email,
+        data: data,
+        hora: hora,
+        servico: servico,
+        preco: preco,
+        status: 'pendente',
+        created_at: new Date()
     };
-    if(eid) db = db.map(i => i.id === ag.id ? ag : i); else db.push(ag);
-    localStorage.setItem('barbearia_db', JSON.stringify(db));
-    alert("Horário agendado com sucesso!");
-    closeModal('modalAgendar');
-    renderMeus();
+
+    try {
+        if (editId) {
+            // Atualiza agendamento existente
+            const { error } = await supabase
+                .from('agendamentos')
+                .update(agendamento)
+                .eq('id', parseInt(editId));
+
+            if (error) throw error;
+        } else {
+            // Cria novo agendamento
+            const { error } = await supabase
+                .from('agendamentos')
+                .insert([agendamento]);
+
+            if (error) throw error;
+        }
+
+        alert('Horário agendado com sucesso!');
+        closeModal('modalAgendar');
+        carregarAgendamentos();
+    } catch (error) {
+        console.error('Erro ao agendar:', error);
+        alert('Erro ao agendar. Tente novamente.');
+    }
 }
 
+// Editar agendamento
+async function editarAgendamento(id) {
+    const agendamento = db.find(a => a.id === id);
+    if (agendamento) {
+        document.getElementById('ag-titulo').innerText = "Editar Agendamento";
+        document.getElementById('edit-id').value = id;
+        document.getElementById('data-ag').value = agendamento.data;
+        document.getElementById('nome-ag').value = user.nome;
+        
+        // Preenche a hora
+        const hSel = document.getElementById('hora-ag');
+        hSel.innerHTML = "";
+        for (let i = 8; i <= 19; i++) {
+            const option = document.createElement('option');
+            option.value = `${i}:00`;
+            option.text = `${i}:00`;
+            if (agendamento.hora === `${i}:00`) {
+                option.selected = true;
+            }
+            hSel.appendChild(option);
+        }
+        
+        // Preenche o serviço
+        const servicoSelect = document.getElementById('servico-ag');
+        for (let i = 0; i < servicoSelect.options.length; i++) {
+            if (servicoSelect.options[i].text === agendamento.servico) {
+                servicoSelect.selectedIndex = i;
+                break;
+            }
+        }
+        
+        openModal('modalAgendar');
+    }
+}
+
+// Excluir agendamento
+async function excluirCorte(id) {
+    if (confirm('Tem certeza que deseja cancelar este agendamento?')) {
+        try {
+            const { error } = await supabase
+                .from('agendamentos')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+
+            alert('Agendamento cancelado com sucesso!');
+            carregarAgendamentos();
+        } catch (error) {
+            console.error('Erro ao cancelar:', error);
+            alert('Erro ao cancelar agendamento.');
+        }
+    }
+}
+
+// Renderiza lista de agendamentos do usuário
 function renderMeus() {
     const div = document.getElementById('listaMeusCortes');
-    const meus = db.filter(i => i.email === user.email);
+    const meus = db || [];
+    
     div.innerHTML = meus.length ? '' : '<p style="text-align:center; color:#666">Você ainda não tem agendamentos.</p>';
-    meus.reverse().forEach(i => {
+    
+    meus.forEach(i => {
         div.innerHTML += `
         <div style="background:#222; padding:15px; border-radius:10px; margin-bottom:12px; border-left:4px solid var(--gold)">
             <div style="display:flex; justify-content:space-between; align-items:flex-start">
@@ -114,6 +295,144 @@ function renderMeus() {
     });
 }
 
+// Notificações
+async function renderNotifs() {
+    try {
+        const { data: notifs, error } = await supabase
+            .from('notificacoes')
+            .select('*')
+            .eq('email', user.email)
+            .order('data', { ascending: false });
+
+        if (error) throw error;
+
+        const div = document.getElementById('listaNotificacoes');
+        const badge = document.getElementById('notifBadge');
+        
+        badge.style.display = notifs?.length ? 'inline-block' : 'none';
+        badge.innerText = notifs?.length || 0;
+        
+        div.innerHTML = notifs?.length ? '' : '<p style="text-align:center; color:#666">Nenhuma notificação nova.</p>';
+        
+        notifs?.forEach((n, idx) => {
+            div.innerHTML += `
+            <div class="notif-item">
+                <input type="checkbox" class="n-check" data-id="${n.id}">
+                <div class="notif-content">
+                    <small style="color:var(--gold)">${new Date(n.data).toLocaleDateString()}</small><br>${n.msg}
+                </div>
+            </div>`;
+        });
+    } catch (error) {
+        console.error('Erro ao carregar notificações:', error);
+    }
+}
+
+async function limparNotificacoes() {
+    const checks = document.querySelectorAll('.n-check:checked');
+    const idsParaRemover = [];
+    
+    checks.forEach(c => {
+        if (c.dataset.id) {
+            idsParaRemover.push(parseInt(c.dataset.id));
+        }
+    });
+
+    if (idsParaRemover.length === 0) {
+        return alert('Selecione as notificações para apagar.');
+    }
+
+    try {
+        const { error } = await supabase
+            .from('notificacoes')
+            .delete()
+            .in('id', idsParaRemover);
+
+        if (error) throw error;
+
+        renderNotifs();
+    } catch (error) {
+        console.error('Erro ao apagar notificações:', error);
+        alert('Erro ao apagar notificações.');
+    }
+}
+
+// Atualizar perfil
+async function salvarPerfil() {
+    const novoNome = document.getElementById('p-nome').value;
+    const novaSenha = document.getElementById('p-pass').value;
+    const tipoCabelo = document.getElementById('p-cabelo').value;
+
+    if (!novoNome) {
+        return alert('O nome é obrigatório!');
+    }
+
+    try {
+        // Atualiza dados na tabela usuarios
+        const { error: userError } = await supabase
+            .from('usuarios')
+            .update({ 
+                nome: novoNome,
+                cabelo: tipoCabelo
+            })
+            .eq('email', user.email);
+
+        if (userError) throw userError;
+
+        // Atualiza senha se fornecida
+        if (novaSenha) {
+            const { error: passError } = await supabase.auth.updateUser({
+                password: novaSenha
+            });
+
+            if (passError) throw passError;
+        }
+
+        // Atualiza objeto local
+        user.nome = novoNome;
+        user.cabelo = tipoCabelo;
+        
+        localStorage.setItem('saas_user', JSON.stringify(user));
+        
+        alert('Perfil atualizado com sucesso!');
+        closeModal('modalPerfil');
+        location.reload();
+        
+    } catch (error) {
+        console.error('Erro ao atualizar perfil:', error);
+        alert('Erro ao atualizar perfil. Tente novamente.');
+    }
+}
+
+// Logout
+async function logout() {
+    try {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        
+        localStorage.removeItem('saas_user');
+        location.reload();
+    } catch (error) {
+        console.error('Erro ao fazer logout:', error);
+    }
+}
+
+// Funções auxiliares
+function openNewModal() {
+    document.getElementById('ag-titulo').innerText = "Agendar Horário";
+    document.getElementById('edit-id').value = "";
+    document.getElementById('data-ag').value = "";
+    document.getElementById('nome-ag').value = user.nome;
+    
+    const hSel = document.getElementById('hora-ag');
+    hSel.innerHTML = "";
+    for (let i = 8; i <= 19; i++) {
+        hSel.innerHTML += `<option value="${i}:00">${i}:00</option>`;
+    }
+    
+    openModal('modalAgendar');
+}
+
 function toggleMenu() { 
     const m = document.getElementById('sideMenu');
     m.classList.toggle('active');
@@ -123,41 +442,42 @@ function toggleMenu() {
 function toggleCalCliente() {
     const p = document.getElementById('pop-cal-cliente');
     p.style.display = p.style.display === 'none' ? 'block' : 'none';
-    const g = document.getElementById('grid-cliente'); g.innerHTML = "";
-    for(let i=1; i<=31; i++) {
-        const d = (i<10?'0'+i:i)+'/03/2026';
+    
+    const g = document.getElementById('grid-cliente');
+    g.innerHTML = "";
+    
+    // Calendário simplificado para março 2026
+    for (let i = 1; i <= 31; i++) {
+        const d = (i < 10 ? '0' + i : i) + '/03/2026';
         g.innerHTML += `<div class="cal-day" onclick="document.getElementById('data-ag').value='${d}'; toggleCalCliente()">${i}</div>`;
     }
 }
 
-function salvarPerfil() {
-    const novoNome = document.getElementById('p-nome').value;
-    if(!novoNome) return alert("O nome é obrigatório!");
-    user.nome = novoNome;
-    user.cabelo = document.getElementById('p-cabelo').value;
-    const ns = document.getElementById('p-pass').value;
-    if(ns) user.senha = ns;
-    localStorage.setItem('u_' + user.email, JSON.stringify(user));
-    localStorage.setItem('saas_user', JSON.stringify(user));
-    alert("Perfil atualizado!");
-    location.reload();
+function openModal(id) { 
+    document.getElementById(id).style.display = 'flex'; 
+    if (id === 'modalMeusCortes') carregarAgendamentos();
 }
 
-function cadastrar() {
-    const n = document.getElementById('r-nome').value, e = document.getElementById('r-email').value, p = document.getElementById('r-pass').value;
-    if(!n || !e || !p) return alert("Preencha todos os campos!");
-    localStorage.setItem('u_' + e, JSON.stringify({ nome: n, email: e, senha: p, cabelo: document.getElementById('r-cabelo').value }));
-    alert("Cadastro realizado!");
-    toggleAuth(false);
+function closeModal(id) { 
+    document.getElementById(id).style.display = 'none'; 
 }
 
-function openModal(id) { document.getElementById(id).style.display = 'flex'; if(id==='modalMeusCortes') renderMeus(); }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-function closeOutside(e, id) { if(e.target.id === id) closeModal(id); }
-function toggleAuth(r) { document.getElementById('loginBox').style.display = r?'none':'block'; document.getElementById('regBox').style.display = r?'block':'none'; }
-function logout() { localStorage.removeItem('saas_user'); location.reload(); }
-function toggleView(id, el) { const i = document.getElementById(id); i.type = i.type==='password'?'text':'password'; el.classList.toggle('fa-eye-slash'); }
+function closeOutside(e, id) { 
+    if (e.target.id === id) closeModal(id); 
+}
 
+function toggleAuth(showReg) { 
+    document.getElementById('loginBox').style.display = showReg ? 'none' : 'block';
+    document.getElementById('regBox').style.display = showReg ? 'block' : 'none';
+}
+
+function toggleView(id, el) { 
+    const input = document.getElementById(id); 
+    input.type = input.type === 'password' ? 'text' : 'password'; 
+    el.classList.toggle('fa-eye-slash'); 
+}
+
+// Formatação da data
 document.getElementById('data-ag').addEventListener('input', (e) => {
     let v = e.target.value.replace(/\D/g, '');
     if (v.length > 2) v = v.substring(0,2) + '/' + v.substring(2);
