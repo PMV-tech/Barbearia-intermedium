@@ -7,16 +7,20 @@ if (typeof supabase === 'undefined') {
 let user = null;
 let db = [];
 
-// Resto do seu código continua igual...
-
 // Função para verificar se o usuário está logado
 async function checkLogin() {
+    // Verifica se supabase existe
+    if (!window.supabase) {
+        console.error('Supabase não inicializado');
+        return;
+    }
+    
     // Verifica sessão no Supabase
-    const { data: { session }, error } = await supabase.auth.getSession();
+    const { data: { session }, error } = await window.supabase.auth.getSession();
     
     if (session) {
         // Busca dados completos do usuário
-        const { data: userData, error: userError } = await supabase
+        const { data: userData, error: userError } = await window.supabase
             .from('usuarios')
             .select('*')
             .eq('email', session.user.email)
@@ -43,8 +47,13 @@ async function login() {
     const remember = document.getElementById('l-remember').checked;
 
     try {
+        // Login admin (mantido para compatibilidade)
+        if (email === 'admin@admin.com' && password === 'admin') {
+            return window.location.href = 'admin.html';
+        }
+
         // Login no Supabase Auth
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        const { data: authData, error: authError } = await window.supabase.auth.signInWithPassword({
             email: email,
             password: password
         });
@@ -52,18 +61,13 @@ async function login() {
         if (authError) throw authError;
 
         // Busca dados do usuário na tabela 'usuarios'
-        const { data: userData, error: userError } = await supabase
+        const { data: userData, error: userError } = await window.supabase
             .from('usuarios')
             .select('*')
             .eq('email', email)
             .single();
 
         if (userError) throw userError;
-
-        // Login admin (mantido para compatibilidade)
-        if (email === 'admin@admin.com' && password === 'admin') {
-            return window.location.href = 'admin.html';
-        }
 
         if (userData) {
             user = userData;
@@ -97,7 +101,7 @@ async function cadastrar() {
 
     try {
         // Cria usuário no Auth do Supabase
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+        const { data: authData, error: authError } = await window.supabase.auth.signUp({
             email: email,
             password: senha,
             options: {
@@ -111,7 +115,7 @@ async function cadastrar() {
         if (authError) throw authError;
 
         // Insere dados adicionais na tabela 'usuarios'
-        const { error: userError } = await supabase
+        const { error: userError } = await window.supabase
             .from('usuarios')
             .insert([
                 {
@@ -154,7 +158,7 @@ function start() {
 // Carrega agendamentos do Supabase
 async function carregarAgendamentos() {
     try {
-        const { data: agendamentos, error } = await supabase
+        const { data: agendamentos, error } = await window.supabase
             .from('agendamentos')
             .select('*')
             .eq('email', user.email)
@@ -197,7 +201,7 @@ async function agendar() {
     try {
         if (editId) {
             // Atualiza agendamento existente
-            const { error } = await supabase
+            const { error } = await window.supabase
                 .from('agendamentos')
                 .update(agendamento)
                 .eq('id', parseInt(editId));
@@ -205,7 +209,7 @@ async function agendar() {
             if (error) throw error;
         } else {
             // Cria novo agendamento
-            const { error } = await supabase
+            const { error } = await window.supabase
                 .from('agendamentos')
                 .insert([agendamento]);
 
@@ -260,7 +264,7 @@ async function editarAgendamento(id) {
 async function excluirCorte(id) {
     if (confirm('Tem certeza que deseja cancelar este agendamento?')) {
         try {
-            const { error } = await supabase
+            const { error } = await window.supabase
                 .from('agendamentos')
                 .delete()
                 .eq('id', id);
@@ -305,7 +309,7 @@ function renderMeus() {
 // Notificações
 async function renderNotifs() {
     try {
-        const { data: notifs, error } = await supabase
+        const { data: notifs, error } = await window.supabase
             .from('notificacoes')
             .select('*')
             .eq('email', user.email)
@@ -321,7 +325,7 @@ async function renderNotifs() {
         
         div.innerHTML = notifs?.length ? '' : '<p style="text-align:center; color:#666">Nenhuma notificação nova.</p>';
         
-        notifs?.forEach((n, idx) => {
+        notifs?.forEach((n) => {
             div.innerHTML += `
             <div class="notif-item">
                 <input type="checkbox" class="n-check" data-id="${n.id}">
@@ -350,7 +354,7 @@ async function limparNotificacoes() {
     }
 
     try {
-        const { error } = await supabase
+        const { error } = await window.supabase
             .from('notificacoes')
             .delete()
             .in('id', idsParaRemover);
@@ -376,7 +380,7 @@ async function salvarPerfil() {
 
     try {
         // Atualiza dados na tabela usuarios
-        const { error: userError } = await supabase
+        const { error: userError } = await window.supabase
             .from('usuarios')
             .update({ 
                 nome: novoNome,
@@ -388,7 +392,7 @@ async function salvarPerfil() {
 
         // Atualiza senha se fornecida
         if (novaSenha) {
-            const { error: passError } = await supabase.auth.updateUser({
+            const { error: passError } = await window.supabase.auth.updateUser({
                 password: novaSenha
             });
 
@@ -414,7 +418,7 @@ async function salvarPerfil() {
 // Logout
 async function logout() {
     try {
-        const { error } = await supabase.auth.signOut();
+        const { error } = await window.supabase.auth.signOut();
         if (error) throw error;
         
         localStorage.removeItem('saas_user');
@@ -491,4 +495,3 @@ document.getElementById('data-ag').addEventListener('input', (e) => {
     if (v.length > 5) v = v.substring(0,5) + '/' + v.substring(5,9);
     e.target.value = v;
 });
-
